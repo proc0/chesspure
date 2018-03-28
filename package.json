@@ -1,0 +1,9 @@
+{
+  "name": "chesspure",
+  "version": "0.0.1",
+  "description": "Purescript, Type Driven Design Chess UI",
+  "main": "index.html",
+  "repository": "https://github.com/proc0/chesspure.git",
+  "author": "proc0 <alanvx@gmail.com>",
+  "license": "GPLv3"
+}
