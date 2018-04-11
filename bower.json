@@ -10,7 +10,11 @@
     "purescript-prelude": "^3.1.1",
     "purescript-console": "^3.0.0",
     "purescript-aff": "^4.0.2",
-    "purescript-halogen": "^3.1.2"
+    "purescript-halogen": "^3.1.2",
+    "purescript-matrix": "^2.1.0",
+    "purescript-vector": "^2.0.0",
+    "purescript-maybe": "^3.0.0",
+    "purescript-linear-algebra": "^0.4.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

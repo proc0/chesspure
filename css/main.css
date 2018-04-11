@@ -1,0 +1,103 @@
+header.mdl-layout__header {
+    background-color: rgb(20, 45, 1) !important;
+}
+
+body {
+    margin: 0;
+}
+
+chess {
+    display: flex;
+    float: left;
+}
+
+player.visible {
+    position: absolute;
+    /* width: 512px; + height*/
+    width: 432px;
+    height: 432px;
+    z-index: 2;
+}
+
+player piece {
+    cursor: -webkit-grabbing;
+}
+
+pieces piece {
+    display: flex;
+    position: absolute;
+    /* padding: 9px */
+    padding: 4px;
+    cursor: -webkit-grab;
+}
+
+chess.white .black piece, chess.black .white piece {
+    cursor: default !important;
+}
+/* piece.active {
+     border: 3px solid red;
+} */
+
+square.active {
+    background: #e6f14c !important;
+}
+
+square.valid {
+    cursor: pointer;
+}
+
+rank {
+    display: flex;
+    /* width: 512px; */
+    width: 432px;
+}
+
+rank square {
+    float: left;
+    /* width: 64px; + height*/
+    width: 54px;
+    height: 54px;
+    background-color: #E8E5E1;
+}
+
+rank square.selected {
+    width: 46px;
+    height: 46px;
+    border: 4px solid #e6f14c;
+}
+
+/* dark squares */
+rank:nth-of-type(odd) > square:nth-of-type(even),
+rank:nth-of-type(even) > square:nth-of-type(odd) {
+    background: #D8A367;
+}
+
+.hud {
+    float: left;
+    height: 432px;
+    width: auto;
+    display: inline-block;
+    overflow: scroll; 
+}
+
+.hud tr {
+    text-align: left;
+}
+
+table thead {
+    position: fixed;
+    top: 56px;
+    z-index: 2;
+    background: white;
+    border: 1px solid #eaeaea;
+}
+
+.debug-panel {
+    font-size: 10px;
+    color: white;
+    position: absolute;
+    background: black;
+    right: 30px;
+    top: 0;
+    width: 160px;
+}
