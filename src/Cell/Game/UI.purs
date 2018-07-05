@@ -1,57 +1,107 @@
-module Cell.Game.UI where
+module Game.UI where
 
 import Prelude
-import Data.Maybe (Maybe(..), maybe)
+import Data.Coyoneda (Coyoneda, unCoyoneda, liftCoyoneda)
+import Data.Maybe (Maybe(Nothing, Just))
 
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Query.HalogenM as HQ
 import Halogen.HTML.Events as HE
 
-import Depo.Type (UIQuery(..), Query(..), UIState(..), SlotBoard, Message(..))
-import Cell.Board.Component as Board
-import Cell.Game.Core (game, Mode(..), liftQuery)
+data Query f i o a
+  -- | Example query for the HOC
+  = ToggleOn a
+  | Set a
 
-type GameMode = Mode Query Boolean Message
+  -- | Contains a query of the inner component
+  | Inner (Coyoneda f a)
+  -- | Handle messages of te inner component
+  | HandleInner o a
+  -- | React to input to the HOC
+  | InnerInput i a
 
-ui :: forall m. H.Component HH.HTML UIQuery Unit Void m
-ui =
-    H.parentComponent
-        { initialState: const initialState
-        , render
-        , eval
-        , receiver: const Nothing
-        }
-    where
+-- | Lift a query from the inner component to a query of the HOC. Useful when
+-- | querying a component thats "inside" this HOC.
+liftQuery :: forall f i o a. f a -> Query f i o a
+liftQuery = Inner <<< liftCoyoneda
 
-    initialState :: UIState
-    initialState =
-        { toggleCount: 0
-        , boardState: Nothing
-        }
+type Slot = Unit
 
-    render :: UIState -> H.ParentHTML UIQuery GameMode SlotBoard m
-    render state =
-        HH.div_
-        [ HH.slot SlotBoard (game Board.board) true (HE.input HandleBoard)
-        , HH.p_
-            [ HH.text ("Button has been toggled " <> show state.toggleCount <> " time(s)") ]
-        , HH.p_
-            [ HH.text
-                $ "Last time I checked, the button was: "
-                <> (maybe "(not checked yet)" (if _ then "on" else "off") state.boardState)
-                <> ". "
-            , HH.button
-                [ HE.onClick (HE.input_ CheckBoardState) ]
-                [ HH.text "Check now" ]
-            ]
+type State i =
+  -- | State of the HOC itself
+  { on :: Boolean
+  -- | Keep track of inputs that we pass through to the inner component
+  , input :: i
+  }
+
+class CanSet f where
+  set :: Boolean -> H.Action f
+
+-- | Takes a component and wraps it to produce a new component with added
+-- | functionality.
+-- |
+-- | For the sake of this example, we require that all components that this
+-- | factory wraps implement the `CanSet` typeclass, i.e. something in them
+-- | can be "set" by giving a boolean.
+-- |
+-- | `f`, `i`, `o` are the query, input and output types of the wrapped
+-- | component.
+factory
+  :: forall f i o m
+   . CanSet f
+  => H.Component HH.HTML f i o m
+  -> H.Component HH.HTML (Query f i o) i o m
+factory innerComponent =
+  H.parentComponent
+    { initialState:
+        { on: false
+        , input: _ 
+        }::(i -> State i)
+    , render
+    , eval
+    , receiver: \i -> Just $ InnerInput i unit
+    }
+
+  where
+
+  render :: State i -> H.ParentHTML (Query f i o) f Slot m
+  render state =
+    HH.div_
+      [ HH.p_
+        [ HH.button
+          [ HE.onClick (HE.input_ ToggleOn) ]
+          [ HH.text "Toggle wrapper state" ]
+        , HH.text $ " Wrapper state: " <> if state.on then "on" else "off"
         ]
+      , HH.p_
+        [ HH.button
+          [ HE.onClick (HE.input_ Set) ]
+          [ HH.text "Set inner component to off" ]
+        ]
+      , HH.p_
+        [ HH.slot unit innerComponent state.input (HE.input HandleInner)
+        ]
+      , HH.hr_
+      , HH.hr_
+      ]
 
-    eval :: UIQuery ~> H.ParentDSL UIState UIQuery GameMode SlotBoard Void m
-    eval = case _ of
-        HandleBoard (Toggled _) next -> do
-            H.modify (\st -> st { toggleCount = st.toggleCount + 1 })
-            pure next
-        CheckBoardState next -> do
-            boardState <- H.query Board $ liftQuery $ H.request IsOn
-            H.modify (_ { boardState = boardState })
-            pure next    
+  eval :: Query f i o ~> H.ParentDSL (State i) (Query f i o) f Slot o m
+  eval (ToggleOn next) = do
+    H.modify $ \state -> state { on = not state.on }
+    pure next
+  eval (Set next) = do
+    _ <- H.query unit $ H.action (set false)
+    pure next
+  eval (Inner iq) = iq # unCoyoneda \k q -> do
+    result <- H.query unit q
+    case result of
+      Nothing ->
+        HQ.halt "HOC inner component query failed (this should be impossible)"
+      Just a -> pure (k a)
+  eval (HandleInner o next) = do
+    H.raise o
+    pure next
+  eval (InnerInput i next) = do
+    H.modify $ _{ input = i }
+    pure next

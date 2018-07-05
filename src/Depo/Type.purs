@@ -1,8 +1,8 @@
 module Depo.Type where
 
 import Prelude
-import Data.Coyoneda (Coyoneda, liftCoyoneda)
-import Data.Maybe (Maybe)
+-- import Data.Coyoneda (Coyoneda, liftCoyoneda)
+-- import Data.Maybe (Maybe)
 import Halogen as H
 
 -- import Prelude
